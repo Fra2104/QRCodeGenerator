@@ -1,0 +1,56 @@
+
+name: Build QR Code Generator
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            asset: windows
+            extension: .exe
+
+          - os: ubuntu-latest
+            asset: linux
+            extension: ""
+
+          - os: macos-latest
+            asset: macos
+            extension: ""
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          pyinstaller --onefile --name QR-Code-Generator src/main.py
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: QR-Code-Generator-${{ matrix.asset }}
+          path: dist/QR-Code-Generator${{ matrix.extension }}
